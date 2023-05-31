@@ -26,7 +26,7 @@ fun main() {
         routes(
             "/api" bind contract
         )
-    ).asServer(Jetty(9000)).start()
+    ).asServer(Jetty(port.value)).start()
 }
 
 fun createBooksRoute(): ContractRoute {

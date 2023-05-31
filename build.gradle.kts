@@ -16,6 +16,7 @@ dependencies {
     implementation("org.http4k:http4k-server-jetty")
     implementation("org.http4k:http4k-format-jackson")
     implementation("org.http4k:http4k-contract")
+    implementation("org.http4k:http4k-cloudnative")
 
     testImplementation(kotlin("test"))
 }
