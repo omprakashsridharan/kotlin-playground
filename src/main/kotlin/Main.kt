@@ -20,13 +20,16 @@ data class CreateBook(val id: Long, val title: String, val isbn: String)
 val scope = CoroutineScope(Dispatchers.Default)
 
 fun main(): Unit = runBlocking {
-    val server = createServer()
-    scope.launch {
-        server.start()
+    val dbConnection = getDatabaseConnection(dbUrl, dbUser, dbPassword)
+    dbConnection?.let { connection ->
+        val server = createServer()
+        scope.launch {
+            server.start()
+        }
+        waitForShutdownSignal()
+        println("Shutting down")
+        server.stop()
     }
-    waitForShutdownSignal()
-    println("Shutting down")
-    server.stop()
 }
 
 suspend fun createServer(): Http4kServer {

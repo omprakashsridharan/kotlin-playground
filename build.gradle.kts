@@ -21,6 +21,11 @@ dependencies {
     //Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
 
+    //Database
+    implementation("org.ktorm:ktorm-core:3.6.0")
+    implementation("org.ktorm:ktorm-support-postgresql:3.6.0")
+    implementation("org.postgresql:postgresql:42.6.0")
+
     testImplementation(kotlin("test"))
 }
 
