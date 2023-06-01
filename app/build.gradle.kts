@@ -1,13 +1,5 @@
 plugins {
-    kotlin("jvm") version "1.8.21"
-    application
-}
-
-group = "com.omprakash"
-version = "1.0-SNAPSHOT"
-
-repositories {
-    mavenCentral()
+    id("application-conventions")
 }
 
 dependencies {
@@ -25,16 +17,10 @@ dependencies {
     implementation("org.ktorm:ktorm-core:3.6.0")
     implementation("org.ktorm:ktorm-support-postgresql:3.6.0")
     implementation("org.postgresql:postgresql:42.6.0")
-
     testImplementation(kotlin("test"))
-}
 
-tasks.test {
-    useJUnitPlatform()
-}
-
-kotlin {
-    jvmToolchain(11)
+    // subprojects
+    implementation(project(mapOf("path" to ":database")))
 }
 
 application {
