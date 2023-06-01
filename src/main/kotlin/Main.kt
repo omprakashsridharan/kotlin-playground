@@ -14,15 +14,19 @@ import org.http4k.routing.routes
 import org.http4k.server.Http4kServer
 import org.http4k.server.Jetty
 import org.http4k.server.asServer
+import org.ktorm.database.Database
+import org.ktorm.support.postgresql.insertReturning
 
-data class CreateBook(val id: Long, val title: String, val isbn: String)
+data class CreateBookRequest(val title: String, val isbn: String)
+data class CreateBookResponse(val id: Long, val title: String, val isbn: String)
 
 val scope = CoroutineScope(Dispatchers.Default)
 
 fun main(): Unit = runBlocking {
-    val dbConnection = getDatabaseConnection(dbUrl, dbUser, dbPassword)
-    dbConnection?.let { connection ->
-        val server = createServer()
+    val resources = Resources()
+    resources.use {
+        val routes = getRoutes(resources = it)
+        val server = createServer(serverRoutes = routes, port = port)
         scope.launch {
             server.start()
         }
@@ -32,13 +36,13 @@ fun main(): Unit = runBlocking {
     }
 }
 
-suspend fun createServer(): Http4kServer {
+suspend fun createServer(serverRoutes: List<ContractRoute>, port: Port): Http4kServer {
     val globalFilters = DebuggingFilters.PrintRequestAndResponse().then(ServerFilters.CatchLensFailure)
-    val createBooksRoute = createBooksRoute()
+
     val contract = contract {
         renderer = OpenApi3(ApiInfo("Book publish API", "v1.0"), Jackson)
         descriptionPath = "/openapi.json"
-        routes += createBooksRoute
+        routes += serverRoutes
     }
     return globalFilters.then(
         routes(
@@ -47,6 +51,10 @@ suspend fun createServer(): Http4kServer {
     ).asServer(Jetty(port.value))
 }
 
+suspend fun getRoutes(resources: Resources): List<ContractRoute> {
+    val createBooksRoute = createBooksRoute(resources.database)
+    return listOf(createBooksRoute)
+}
 
 suspend fun waitForShutdownSignal() {
     val deferred = CompletableDeferred<Unit>()
@@ -56,17 +64,26 @@ suspend fun waitForShutdownSignal() {
     deferred.await()
 }
 
-suspend fun createBooksRoute(): ContractRoute {
-    val body = Body.auto<CreateBook>().toLens()
+suspend fun createBooksRoute(database: Database): ContractRoute {
+    val requestBodyLens = Body.auto<CreateBookRequest>().toLens()
+    val responseBodyLens = Body.auto<CreateBookResponse>().toLens()
     val spec = "/books" meta {
         summary = "Creates a new book"
-        receiving(body to CreateBook(1L, "title", "isbn"))
-        returning(Status.OK, body to CreateBook(1L, "title", "isbn"))
+        receiving(requestBodyLens to CreateBookRequest("title", "isbn"))
+        returning(Status.OK, responseBodyLens to CreateBookResponse(1L, "title", "isbn"))
     } bindContract Method.POST
 
     val createBook: HttpHandler = { request ->
-        val received: CreateBook = body(request)
-        Response(Status.OK).with(body of received)
+        val received: CreateBookRequest = requestBodyLens(request)
+        val insertedId = database.insertReturning(Tables.Books, Tables.Books.id) {
+            set(it.isbn, received.isbn)
+            set(it.title, received.title)
+        }
+        insertedId?.let {
+            val response = CreateBookResponse(it, received.title, received.isbn)
+            return@let Response(Status.OK).with(responseBodyLens of response)
+        } ?: Response(Status.INTERNAL_SERVER_ERROR)
+
     }
     return spec to createBook
 }

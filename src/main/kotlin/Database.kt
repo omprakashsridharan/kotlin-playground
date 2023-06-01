@@ -13,7 +13,7 @@ object Tables {
     }
 }
 
-fun getDatabaseConnection(dbUrl: DbUrl, dbUser: DbUser, dbPassword: Secret): Database? = dbPassword.use { password ->
+fun getDatabaseConnection(dbUrl: DbUrl, dbUser: DbUser, dbPassword: Secret): Database = dbPassword.use { password ->
     try {
         return@use Database.connect(
             dbUrl.value,
@@ -23,6 +23,6 @@ fun getDatabaseConnection(dbUrl: DbUrl, dbUser: DbUser, dbPassword: Secret): Dat
         )
     } catch (e: Exception) {
         println("Error while connecting to database: ${e.message}")
-        return@use null
+        throw e
     }
 }
