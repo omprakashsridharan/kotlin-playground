@@ -3,21 +3,27 @@ package producer
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.Producer
+import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
+import org.apache.kafka.common.serialization.StringSerializer
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
-class KafkaProducerImpl(private val bootstrapServers: String) : producer.Producer {
+enum class Topics {
+    BOOK_CREATED
+}
+
+class KafkaProducerImpl(private val bootstrapServers: String) : producer.Producer, AutoCloseable {
 
     private var producer: KafkaProducer<String, Any>
 
     init {
         val producerProps = mapOf(
-            "bootstrap.servers" to bootstrapServers,
-            "key.serializer" to "org.apache.kafka.common.serialization.StringSerializer",
-            "value.serializer" to KafkaJsonSchemaSerializer::class.java,
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
+            ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+            ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to KafkaJsonSchemaSerializer::class.java,
             "security.protocol" to "PLAINTEXT"
         )
         producer = KafkaProducer(producerProps)
@@ -37,7 +43,11 @@ class KafkaProducerImpl(private val bootstrapServers: String) : producer.Produce
         }
 
     override suspend fun publishCreatedBook(createdBook: CreatedBook): Boolean =
-        produce("BOOK_CREATED", createdBook.id.toString(), createdBook)
+        produce(Topics.BOOK_CREATED.name, createdBook.id.toString(), createdBook)
+
+    override fun close() {
+        producer.close()
+    }
 
 }
 

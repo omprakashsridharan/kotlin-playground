@@ -10,6 +10,8 @@ dependencies {
     // server
     implementation(project(mapOf("path" to ":server")))
 
+    implementation(project(mapOf("path" to ":producer")))
+
     testImplementation(kotlin("test"))
 }
 
