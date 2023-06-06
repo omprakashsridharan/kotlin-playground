@@ -1,11 +1,11 @@
 package producer
 
-import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.Producer
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
+import org.apache.kafka.common.serialization.ByteArraySerializer
 import org.apache.kafka.common.serialization.StringSerializer
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -15,21 +15,22 @@ enum class Topics {
     BOOK_CREATED
 }
 
-class KafkaProducerImpl(private val bootstrapServers: String) : producer.Producer, AutoCloseable {
+class KafkaProducerImpl(bootstrapServers: String, schemaRegistryUrl: String = "") : AutoCloseable {
 
-    private var producer: KafkaProducer<String, Any>
+    private var producer: KafkaProducer<String, ByteArray>
 
     init {
         val producerProps = mapOf(
             ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
-            ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to KafkaJsonSchemaSerializer::class.java,
+            ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to ByteArraySerializer::class.java,
+            "schema.registry.url" to schemaRegistryUrl,
             "security.protocol" to "PLAINTEXT"
         )
         producer = KafkaProducer(producerProps)
     }
 
-    private suspend fun <T> produce(topic: String, key: String, value: T): Boolean =
+    suspend fun produce(topic: String, key: String, value: ByteArray): Boolean =
         producer.use {
             val result = runCatching {
                 it.asyncSend(ProducerRecord(topic, key, value))
@@ -42,14 +43,12 @@ class KafkaProducerImpl(private val bootstrapServers: String) : producer.Produce
             }
         }
 
-    override suspend fun publishCreatedBook(createdBook: CreatedBook): Boolean =
-        produce(Topics.BOOK_CREATED.name, createdBook.id.toString(), createdBook)
-
     override fun close() {
         producer.close()
     }
 
 }
+
 
 suspend fun <K, V> Producer<K, V>.asyncSend(record: ProducerRecord<K, V>) =
     suspendCoroutine<RecordMetadata> { continuation ->
