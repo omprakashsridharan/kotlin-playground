@@ -11,9 +11,13 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.KafkaContainer
+import org.testcontainers.containers.Network
+import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
+import org.testcontainers.lifecycle.Startables
 import org.testcontainers.utility.DockerImageName
 import java.time.Duration
 import java.util.*
@@ -21,16 +25,30 @@ import java.util.*
 @Testcontainers
 class TestKafkaProducerImpl {
     companion object {
+        val network = Network.newNetwork()
 
         @Container
         val kafkaContainer: KafkaContainer =
-            KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.4.0")).withKraft()
+            KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.4.0")).withKraft().withNetwork(network)
+                .waitingFor(Wait.forLogMessage(".*KafkaServer.*started.*", 1))
+
+        @Container
+        val schemaRegistryContainer: GenericContainer<*> =
+            GenericContainer(DockerImageName.parse("confluentinc/cp-schema-registry:7.4.0"))
+                .withNetwork(network)
+                .dependsOn(kafkaContainer)
+                .withEnv("SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS", "PLAINTEXT://kafka:9092")
+                .withEnv("SCHEMA_REGISTRY_HOST_NAME", "schema-registry")
+                .withExposedPorts(8081)
+
+
         private lateinit var bookCreatedProducerImpl: KafkaProducerImpl
 
         @JvmStatic
         @BeforeAll
         fun startContainers(): Unit {
-            kafkaContainer.start()
+            val startables = listOf(kafkaContainer, schemaRegistryContainer)
+            Startables.deepStart(startables)
         }
     }
 
@@ -38,7 +56,7 @@ class TestKafkaProducerImpl {
     fun setUp() {
         bookCreatedProducerImpl = KafkaProducerImpl(
             kafkaContainer.bootstrapServers,
-            "mock://"
+            "http://${schemaRegistryContainer.host}:${schemaRegistryContainer.getMappedPort(8081)}"
         )
     }
 
