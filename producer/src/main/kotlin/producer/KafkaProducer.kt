@@ -13,7 +13,7 @@ enum class Topics {
     BOOK_CREATED
 }
 
-class KafkaProducerImpl<T>(bootstrapServers: String, schemaRegistryUrl: String = "") : AutoCloseable {
+class KafkaProducerImpl<T>(bootstrapServers: String, schemaRegistryUrl: String) {
 
     private var producer: KafkaProducer<String, T>
 
@@ -28,21 +28,17 @@ class KafkaProducerImpl<T>(bootstrapServers: String, schemaRegistryUrl: String =
         producer = KafkaProducer(producerProps)
     }
 
-    suspend fun produce(topic: String, key: String, value: T): Boolean =
-        producer.use {
-            val result = runCatching {
-                it.asyncSend(ProducerRecord(topic, null, Instant.now().toEpochMilli(), key, value))
-            }
-            if (result.isSuccess) {
-                return@use true
-            } else {
-                println("Error while producing message to topic $topic, error: ${result.exceptionOrNull()}")
-                return@use false
-            }
+    suspend fun produce(topic: String, key: String, value: T): Boolean {
+        val result = runCatching {
+            producer.asyncSend(ProducerRecord(topic, null, Instant.now().toEpochMilli(), key, value))
         }
-
-    override fun close() {
-        producer.close()
+        return if (result.isSuccess) {
+            println("Successfully produced message to topic $topic, metadata: ${result.getOrNull().toString()}")
+            true
+        } else {
+            println("Error while producing message to topic $topic, error: ${result.exceptionOrNull()}")
+            false
+        }
     }
 
 }

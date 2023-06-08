@@ -1,6 +1,7 @@
 package producer
 
-class BookCreatedProducer(private val kafkaProducer: KafkaProducerImpl<CreatedBook>) : Producer {
+class BookCreatedProducer(bootstrapServers: String, schemaRegistryUrl: String) : Producer {
+    private var kafkaProducer: KafkaProducerImpl<CreatedBook> = KafkaProducerImpl(bootstrapServers, schemaRegistryUrl)
     override suspend fun publishCreatedBook(createdBook: CreatedBook): Boolean =
         this.kafkaProducer.produce(
             Topics.BOOK_CREATED.name,
