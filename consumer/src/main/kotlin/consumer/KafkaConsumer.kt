@@ -2,16 +2,22 @@ package consumer
 
 import com.github.thake.kafka.avro4k.serializer.KafkaAvro4kDeserializer
 import com.github.thake.kafka.avro4k.serializer.KafkaAvro4kDeserializerConfig
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.*
 import org.apache.kafka.clients.consumer.ConsumerConfig
+import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import java.io.Closeable
 import java.time.Duration
 import java.util.*
 
 
-class KafkaConsumer<T>(bootstrapServers: String, schemaRegistryUrl: String, groupId: String) : Closeable {
+class KafkaConsumer<T>(
+    bootstrapServers: String,
+    schemaRegistryUrl: String,
+    groupId: String,
+    private val topic: String
+) : Closeable {
     private var consumer: KafkaConsumer<String, T>
 
     init {
@@ -27,20 +33,30 @@ class KafkaConsumer<T>(bootstrapServers: String, schemaRegistryUrl: String, grou
         consumer = KafkaConsumer(consumerProps)
     }
 
-    suspend fun consume(topic: String): Flow<T> =
-        flow {
+    suspend fun consume(onMessageReceived: (T) -> Unit): Flow<T> {
+        return flow {
             consumer.subscribe(listOf(topic))
-            while (true) {
-                val records = consumer.poll(Duration.ofMillis(100))
-                for (record in records) {
-                    val value = record.value()
-                    emit(value)
-                }
+            consumer.asFlow().collect { record ->
+                emit(record.value())
             }
-        }
+        }.flowOn(Dispatchers.IO)
+            .buffer()
+            .onEach { message ->
+                onMessageReceived(message)
+            }
+            .catch { exception ->
+                // Handle any errors that occur during consumption
+                println("Error during message consumption: $exception")
+            }
+    }
 
 
     override fun close() {
         consumer.close()
     }
 }
+
+fun <K, V> KafkaConsumer<K, V>.asFlow(timeout: Duration = Duration.ofMillis(500)): Flow<ConsumerRecord<K, V>> =
+    flow {
+        poll(timeout).forEach { emit(it) }
+    }

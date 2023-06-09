@@ -4,7 +4,6 @@ import com.github.thake.kafka.avro4k.serializer.KafkaAvro4kSerializer
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.apache.kafka.clients.producer.KafkaProducer
@@ -75,20 +74,18 @@ class TestKafkaConsumer {
     @Test
     fun testConsumer() = runBlocking {
         val numberProducer = getProducer<Int>()
-        val numberConsumer: KafkaConsumer<Int> =
-            KafkaConsumer(kafkaContainer.bootstrapServers, schemaRegistryUrl, "number-group")
         val topic = "number"
+        val numberConsumer: KafkaConsumer<Int> =
+            KafkaConsumer(kafkaContainer.bootstrapServers, schemaRegistryUrl, "number-group", topic)
+
         val n = 5
         val numberMessages = (1..n).toList()
         val counter = AtomicInteger()
 
         val collectJob = launch(Dispatchers.IO) {
-            val numberFlow = numberConsumer.consume(topic)
-            numberFlow
-                .take(n)
-                .collect { message ->
-                    assertEquals(counter.incrementAndGet(), message)
-                }
+            numberConsumer.consume { message ->
+                assertEquals(counter.incrementAndGet(), message)
+            }
         }
         collectJob.start()
 
@@ -99,7 +96,6 @@ class TestKafkaConsumer {
             delay(200)
         }
         collectJob.cancel()
-        numberConsumer.close()
         assertEquals(n, 5)
     }
 }
