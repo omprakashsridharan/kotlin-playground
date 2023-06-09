@@ -5,8 +5,7 @@ import com.github.thake.kafka.avro4k.serializer.KafkaAvro4kDeserializerConfig
 import kotlinx.coroutines.test.runTest
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.KafkaConsumer
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -20,7 +19,6 @@ import org.testcontainers.lifecycle.Startables
 import org.testcontainers.utility.DockerImageName
 import java.time.Duration
 import java.util.*
-import kotlin.test.assertTrue
 
 @Testcontainers
 class TestKafkaProducerImpl {
@@ -64,16 +62,29 @@ class TestKafkaProducerImpl {
         )
     }
 
-    @AfterEach
-    fun tearDown() {
-        bookCreatedProducerImpl.close()
+    @Test
+    fun testSchemaChecking() = runTest {
+        val topic = "string-topic"
+        val stringProducerImpl1 = KafkaProducerImpl<String>(
+            kafkaContainer.bootstrapServers,
+            schemaRegistryUrl
+        )
+        val publishResult1 = stringProducerImpl1.produce(topic, "TEST", "TEST")
+        assertTrue(publishResult1)
+        val stringProducerImpl2 = KafkaProducerImpl<CreatedBook>(
+            kafkaContainer.bootstrapServers,
+            schemaRegistryUrl
+        )
+        val createdBook = CreatedBook("1", "B1", "ISBN1")
+        val publishResult2 = stringProducerImpl2.produce(topic, "TEST", createdBook)
+        assertFalse(publishResult2)
     }
 
     @Test
     fun testPublishCreatedBook() = runTest {
         val topic = Topics.BOOK_CREATED.name
         val createdBook = CreatedBook("1", "B1", "ISBN1")
-        val bookCreatedProducer = BookCreatedProducer(bookCreatedProducerImpl)
+        val bookCreatedProducer = BookCreatedProducer(kafkaContainer.bootstrapServers, schemaRegistryUrl)
         val publishResult = bookCreatedProducer.publishCreatedBook(createdBook)
         assertTrue(publishResult)
         val consumerProps = Properties().apply {
