@@ -1,5 +1,3 @@
-
-
 plugins {
     id("library-conventions")
     kotlin("kapt")
@@ -16,7 +14,6 @@ dependencies {
     implementation("com.github.avro-kotlin.avro4k:avro4k-core:1.8.0")
     implementation("com.github.thake.avro4k:avro4k-kafka-serializer:0.14.0")
     implementation("org.testcontainers:testcontainers:$testcontainersVersion")
-    implementation(project(mapOf("path" to ":common")))
     testImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
     testImplementation("org.testcontainers:kafka:$testcontainersVersion")
 

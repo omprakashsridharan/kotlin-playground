@@ -2,6 +2,8 @@ package producer
 
 import com.github.thake.kafka.avro4k.serializer.KafkaAvro4kDeserializer
 import com.github.thake.kafka.avro4k.serializer.KafkaAvro4kDeserializerConfig
+import common.messaging.constants.Topic
+import common.messaging.dto.CreatedBook
 import kotlinx.coroutines.test.runTest
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.KafkaConsumer
@@ -21,7 +23,7 @@ import java.time.Duration
 import java.util.*
 
 @Testcontainers
-class TestKafkaProducerImpl {
+class TestKafkaProducer {
     companion object {
         val network = Network.newNetwork()
 
@@ -82,10 +84,13 @@ class TestKafkaProducerImpl {
 
     @Test
     fun testPublishCreatedBook() = runTest {
-        val topic = Topics.BOOK_CREATED.name
+        val topic = Topic.BOOK_CREATED.name
         val createdBook = CreatedBook("1", "B1", "ISBN1")
-        val bookCreatedProducer = BookCreatedProducer(kafkaContainer.bootstrapServers, schemaRegistryUrl)
-        val publishResult = bookCreatedProducer.publishCreatedBook(createdBook)
+        val bookCreatedProducer = KafkaProducerImpl<CreatedBook>(
+            kafkaContainer.bootstrapServers,
+            schemaRegistryUrl
+        )
+        val publishResult = bookCreatedProducer.produce(Topic.BOOK_CREATED.name, createdBook.id, createdBook)
         assertTrue(publishResult)
         val consumerProps = Properties().apply {
             put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaContainer.bootstrapServers)

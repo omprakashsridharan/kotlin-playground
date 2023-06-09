@@ -1,7 +1,6 @@
 import database.Repository
 import database.RepositoryImpl
 import kotlinx.coroutines.runBlocking
-import producer.BookCreatedProducer
 import server.Server
 import server.Service
 

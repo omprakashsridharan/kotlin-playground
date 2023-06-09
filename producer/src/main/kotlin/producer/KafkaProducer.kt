@@ -9,9 +9,6 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
-enum class Topics {
-    BOOK_CREATED
-}
 
 class KafkaProducerImpl<T>(bootstrapServers: String, schemaRegistryUrl: String) {
 

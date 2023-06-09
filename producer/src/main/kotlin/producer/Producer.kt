@@ -1,10 +1,7 @@
 package producer
 
-import kotlinx.serialization.Serializable
+import common.messaging.dto.CreatedBook
 
-
-@Serializable
-data class CreatedBook(val id: String, val title: String, val isbn: String)
 
 interface Producer {
     suspend fun publishCreatedBook(createdBook: CreatedBook): Boolean
