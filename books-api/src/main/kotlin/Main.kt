@@ -1,8 +1,6 @@
-import database.Repository
-import database.RepositoryImpl
 import kotlinx.coroutines.runBlocking
-import server.Server
-import server.Service
+import repository.Repository
+import repository.RepositoryImpl
 
 fun main(): Unit = runBlocking {
     val repository: Repository = RepositoryImpl(

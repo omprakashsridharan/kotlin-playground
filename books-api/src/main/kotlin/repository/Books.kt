@@ -1,4 +1,4 @@
-package database
+package repository
 
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.Table

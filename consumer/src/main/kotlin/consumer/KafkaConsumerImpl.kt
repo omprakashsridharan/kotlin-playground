@@ -3,16 +3,17 @@ package consumer
 import com.github.thake.kafka.avro4k.serializer.KafkaAvro4kDeserializer
 import com.github.thake.kafka.avro4k.serializer.KafkaAvro4kDeserializerConfig
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.isActive
 import org.apache.kafka.clients.consumer.ConsumerConfig
-import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import java.io.Closeable
 import java.time.Duration
 import java.util.*
 
 
-class KafkaConsumer<T>(
+class KafkaConsumerImpl<T>(
     bootstrapServers: String,
     schemaRegistryUrl: String,
     groupId: String,
@@ -33,14 +34,17 @@ class KafkaConsumer<T>(
         consumer = KafkaConsumer(consumerProps)
     }
 
-    suspend fun consume(onMessageReceived: (T) -> Unit): Flow<T> {
+    fun consume(onMessageReceived: suspend (T) -> Unit): Flow<T> {
         return flow {
             consumer.subscribe(listOf(topic))
-            consumer.asFlow().collect { record ->
-                emit(record.value())
+            while (currentCoroutineContext().isActive) {
+                val records = consumer.poll(Duration.ofMillis(100))
+                for (record in records) {
+                    val value = record.value()
+                    emit(value)
+                }
             }
         }.flowOn(Dispatchers.IO)
-            .buffer()
             .onEach { message ->
                 onMessageReceived(message)
             }
@@ -50,13 +54,7 @@ class KafkaConsumer<T>(
             }
     }
 
-
     override fun close() {
         consumer.close()
     }
 }
-
-fun <K, V> KafkaConsumer<K, V>.asFlow(timeout: Duration = Duration.ofMillis(500)): Flow<ConsumerRecord<K, V>> =
-    flow {
-        poll(timeout).forEach { emit(it) }
-    }

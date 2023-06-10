@@ -8,13 +8,13 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/books-analytics" />
             <option value="$PROJECT_DIR$/books-api" />
             <option value="$PROJECT_DIR$/buildSrc" />
             <option value="$PROJECT_DIR$/common" />
             <option value="$PROJECT_DIR$/consumer" />
             <option value="$PROJECT_DIR$/database" />
             <option value="$PROJECT_DIR$/producer" />
-            <option value="$PROJECT_DIR$/server" />
           </set>
         </option>
       </GradleProjectSettings>

@@ -1,5 +1,6 @@
-package database
+package repository
 
+import database.getDatabaseConnection
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.insert
@@ -7,7 +8,7 @@ import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionA
 
 class RepositoryImpl(jdbcUrl: String, driverClassName: String, username: String, password: String) : Repository {
 
-    var database: Database
+    private var database: Database
     init {
         database = getDatabaseConnection(
             jdbcUrl = jdbcUrl,

@@ -4,6 +4,8 @@ import com.github.thake.kafka.avro4k.serializer.KafkaAvro4kSerializer
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.cancellable
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.apache.kafka.clients.producer.KafkaProducer
@@ -25,7 +27,7 @@ import org.testcontainers.utility.DockerImageName
 import java.util.concurrent.atomic.AtomicInteger
 
 @Testcontainers
-class TestKafkaConsumer {
+class TestKafkaConsumerImpl {
     companion object {
         val network = Network.newNetwork()
 
@@ -75,8 +77,8 @@ class TestKafkaConsumer {
     fun testConsumer() = runBlocking {
         val numberProducer = getProducer<Int>()
         val topic = "number"
-        val numberConsumer: KafkaConsumer<Int> =
-            KafkaConsumer(kafkaContainer.bootstrapServers, schemaRegistryUrl, "number-group", topic)
+        val numberConsumer: KafkaConsumerImpl<Int> =
+            KafkaConsumerImpl(kafkaContainer.bootstrapServers, schemaRegistryUrl, "number-group", topic)
 
         val n = 5
         val numberMessages = (1..n).toList()
@@ -85,9 +87,9 @@ class TestKafkaConsumer {
         val collectJob = launch(Dispatchers.IO) {
             numberConsumer.consume { message ->
                 assertEquals(counter.incrementAndGet(), message)
-            }
+            }.cancellable()
+                .collect()
         }
-        collectJob.start()
 
         for (num in numberMessages) {
             assertDoesNotThrow {
@@ -96,6 +98,6 @@ class TestKafkaConsumer {
             delay(200)
         }
         collectJob.cancel()
-        assertEquals(n, 5)
+        assertEquals(counter.get(), n)
     }
 }

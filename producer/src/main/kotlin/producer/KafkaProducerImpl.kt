@@ -3,7 +3,6 @@ package producer
 import com.github.thake.kafka.avro4k.serializer.KafkaAvro4kSerializer
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig
 import org.apache.kafka.clients.producer.*
-import org.apache.kafka.clients.producer.Producer
 import java.time.Instant
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException

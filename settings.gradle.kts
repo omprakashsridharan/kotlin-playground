@@ -1,2 +1,2 @@
 rootProject.name = "kotlin-playground"
-include("books-api", "database", "server", "producer", "consumer", "common")
+include("books-api", "database", "producer", "consumer", "common", "books-analytics")

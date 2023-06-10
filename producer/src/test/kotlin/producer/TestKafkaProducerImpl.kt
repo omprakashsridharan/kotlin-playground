@@ -23,7 +23,7 @@ import java.time.Duration
 import java.util.*
 
 @Testcontainers
-class TestKafkaProducer {
+class TestKafkaProducerImpl {
     companion object {
         val network = Network.newNetwork()
 

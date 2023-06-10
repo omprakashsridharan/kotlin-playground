@@ -3,7 +3,6 @@ package database
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 
 fun getDatabaseConnection(jdbcUrl: String, driverClassName: String, username: String, password: String): Database {
@@ -18,7 +17,7 @@ fun getDatabaseConnection(jdbcUrl: String, driverClassName: String, username: St
 
     val connection = Database.connect(dataSource)
     transaction {
-        SchemaUtils.create(Books)
+//        SchemaUtils.create(Books)
     }
     return connection
 }
