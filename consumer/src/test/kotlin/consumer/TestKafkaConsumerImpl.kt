@@ -5,7 +5,6 @@ import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.cancellable
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.apache.kafka.clients.producer.KafkaProducer
@@ -85,10 +84,10 @@ class TestKafkaConsumerImpl {
         val counter = AtomicInteger()
 
         val collectJob = launch(Dispatchers.IO) {
-            numberConsumer.consume { message ->
-                assertEquals(counter.incrementAndGet(), message)
-            }.cancellable()
-                .collect()
+            numberConsumer.consume().cancellable()
+                .collect() { message ->
+                    assertEquals(counter.incrementAndGet(), message)
+                }
         }
 
         for (num in numberMessages) {

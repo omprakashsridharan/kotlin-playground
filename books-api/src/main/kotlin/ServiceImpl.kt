@@ -9,8 +9,4 @@ class ServiceImpl(private val repository: Repository, private val bookCreatedPro
         println("Book created publish result $result")
         return createdBookId
     }
-
-    override fun close() {
-        TODO("Not yet implemented")
-    }
 }

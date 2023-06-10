@@ -2,9 +2,9 @@ package consumer
 
 import com.github.thake.kafka.avro4k.serializer.KafkaAvro4kDeserializer
 import com.github.thake.kafka.avro4k.serializer.KafkaAvro4kDeserializerConfig
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.KafkaConsumer
@@ -34,24 +34,22 @@ class KafkaConsumerImpl<T>(
         consumer = KafkaConsumer(consumerProps)
     }
 
-    fun consume(onMessageReceived: suspend (T) -> Unit): Flow<T> {
+    fun consume(): Flow<T> {
         return flow {
             consumer.subscribe(listOf(topic))
-            while (currentCoroutineContext().isActive) {
+            while (true) {
                 val records = consumer.poll(Duration.ofMillis(100))
+
                 for (record in records) {
                     val value = record.value()
                     emit(value)
                 }
+                if (!currentCoroutineContext().isActive) {
+                    println("Coroutine inactive")
+                    break
+                }
             }
-        }.flowOn(Dispatchers.IO)
-            .onEach { message ->
-                onMessageReceived(message)
-            }
-            .catch { exception ->
-                // Handle any errors that occur during consumption
-                println("Error during message consumption: $exception")
-            }
+        }
     }
 
     override fun close() {

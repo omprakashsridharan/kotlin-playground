@@ -11,8 +11,7 @@ fun main(): Unit = runBlocking {
     )
     val bookCreatedProducer = BookCreatedProducer(kafkaBootstrapServers, schemaRegistryUrl)
     val service: Service = ServiceImpl(repository, bookCreatedProducer)
-    service.use {
-        val server = Server()
-        server.start(serverPort = port, service = it)
-    }
+
+    val server = Server()
+    server.start(serverPort = port, service = service)
 }

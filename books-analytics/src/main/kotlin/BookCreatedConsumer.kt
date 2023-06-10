@@ -7,9 +7,6 @@ class BookCreatedConsumer(bootstrapServers: String, schemaRegistryUrl: String) {
     private var kafkaConsumer: KafkaConsumerImpl<CreatedBook> =
         KafkaConsumerImpl(bootstrapServers, schemaRegistryUrl, "books-created-consumer", Topic.BOOK_CREATED.name)
 
-    fun consumeCreatedBook(onBookCreated: suspend (CreatedBook) -> Unit): Flow<CreatedBook> {
-        return kafkaConsumer
-            .consume(onBookCreated)
-    }
+    fun consumeCreatedBook(): Flow<CreatedBook> = kafkaConsumer.consume()
 
 }
