@@ -1,6 +1,5 @@
+import common.messaging.dto.CreatedBook
 import database.Repository
-import producer.BookCreatedProducer
-import producer.CreatedBook
 import server.Service
 
 class ServiceImpl(private val repository: Repository, private val bookCreatedProducer: BookCreatedProducer) : Service {
