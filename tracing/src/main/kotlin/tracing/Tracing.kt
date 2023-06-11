@@ -2,6 +2,8 @@ package tracing
 
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.common.Attributes
+import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
+import io.opentelemetry.context.propagation.ContextPropagators
 import io.opentelemetry.exporter.zipkin.ZipkinSpanExporter
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.resources.Resource
@@ -17,5 +19,6 @@ fun initializeOpenTelemetry(endpoint: String, serviceName: String): OpenTelemetr
         .addSpanProcessor(SimpleSpanProcessor.create(zipkinExporter))
         .setResource(Resource.getDefault().merge(serviceNameResource))
         .build()
-    return OpenTelemetrySdk.builder().setTracerProvider(tracerProvider).buildAndRegisterGlobal()
+    return OpenTelemetrySdk.builder().setTracerProvider(tracerProvider)
+        .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance())).buildAndRegisterGlobal()
 }

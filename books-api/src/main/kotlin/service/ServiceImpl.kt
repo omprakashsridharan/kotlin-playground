@@ -24,7 +24,6 @@ class ServiceImpl(
             tracer.spanBuilder("createBookService").setSpanKind(SpanKind.INTERNAL)
                 .setParent(Context.current())
                 .startSpan()
-        createBookServiceSpan.makeCurrent()
         try {
             return withContext(Context.current().with(createBookServiceSpan).asContextElement()) {
                 val createdBookResult = repository.createBook(title, isbn)
