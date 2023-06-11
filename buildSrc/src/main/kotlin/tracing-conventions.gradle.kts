@@ -11,4 +11,5 @@ dependencies {
     implementation("io.opentelemetry:opentelemetry-semconv:1.27.0-alpha")
     implementation("io.opentelemetry.instrumentation:opentelemetry-ktor-2.0:1.26.0-alpha")
     implementation("io.opentelemetry:opentelemetry-extension-kotlin:1.27.0")
+    implementation("io.opentelemetry.instrumentation:opentelemetry-kafka-clients-2.6:1.26.0-alpha")
 }

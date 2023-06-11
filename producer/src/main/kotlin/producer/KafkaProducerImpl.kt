@@ -2,12 +2,12 @@ package producer
 
 import com.github.thake.kafka.avro4k.serializer.KafkaAvro4kSerializer
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig
+import io.opentelemetry.instrumentation.kafkaclients.v2_6.TracingProducerInterceptor
 import org.apache.kafka.clients.producer.*
 import java.time.Instant
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
-
 
 class KafkaProducerImpl<T>(bootstrapServers: String, schemaRegistryUrl: String) {
 
@@ -19,6 +19,7 @@ class KafkaProducerImpl<T>(bootstrapServers: String, schemaRegistryUrl: String) 
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to KafkaAvro4kSerializer::class.java,
             ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to KafkaAvro4kSerializer::class.java,
             AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG to schemaRegistryUrl,
+            ProducerConfig.INTERCEPTOR_CLASSES_CONFIG to TracingProducerInterceptor::class.java.name,
             "security.protocol" to "PLAINTEXT"
         )
         producer = KafkaProducer(producerProps)

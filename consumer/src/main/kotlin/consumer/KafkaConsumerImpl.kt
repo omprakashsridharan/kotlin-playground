@@ -2,6 +2,7 @@ package consumer
 
 import com.github.thake.kafka.avro4k.serializer.KafkaAvro4kDeserializer
 import com.github.thake.kafka.avro4k.serializer.KafkaAvro4kDeserializerConfig
+import io.opentelemetry.instrumentation.kafkaclients.v2_6.TracingConsumerInterceptor
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -30,6 +31,7 @@ class KafkaConsumerImpl<T>(
             put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaAvro4kDeserializer::class.java)
             put(KafkaAvro4kDeserializerConfig.RECORD_PACKAGES, "*")
             put("schema.registry.url", schemaRegistryUrl)
+            put(ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, TracingConsumerInterceptor::class.java.name)
         }
         consumer = KafkaConsumer(consumerProps)
     }

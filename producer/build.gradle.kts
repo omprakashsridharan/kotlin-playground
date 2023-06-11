@@ -2,6 +2,7 @@
 
 plugins {
     id("library-conventions")
+    id("tracing-conventions")
     kotlin("kapt")
     kotlin("plugin.serialization") version "1.8.21"
 }

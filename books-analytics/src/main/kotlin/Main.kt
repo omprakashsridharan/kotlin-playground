@@ -6,6 +6,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 fun main(): Unit = runBlocking {
+    val openTelemetry = tracing.initializeOpenTelemetry(zipkinEndpoint, "books-analytics")
+    val tracerProvider = openTelemetry.tracerProvider
+    val tracer = tracerProvider.get("com.omprakash.kotlin-playground.books-analytics");
     val bookCreatedConsumer = BookCreatedConsumer(kafkaBootstrapServers, schemaRegistryUrl)
     val service: Service = ServiceImpl()
     val bookCreatedConsumerJob = launch(Dispatchers.IO) {

@@ -1,5 +1,6 @@
 plugins {
     id("library-conventions")
+    id("tracing-conventions")
     kotlin("kapt")
     kotlin("plugin.serialization") version "1.8.21"
 }
@@ -16,7 +17,6 @@ dependencies {
     implementation("org.testcontainers:testcontainers:$testcontainersVersion")
     testImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
     testImplementation("org.testcontainers:kafka:$testcontainersVersion")
-
 }
 
 tasks.test {
