@@ -11,6 +11,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import repository.Repository
 
 class ServiceImpl(
@@ -18,6 +20,8 @@ class ServiceImpl(
     private val bookCreatedProducer: BookCreatedProducer,
     private val tracer: Tracer
 ) : Service {
+
+    private val logger: Logger = LoggerFactory.getLogger(this::class.java);
 
     override suspend fun createBook(title: String, isbn: String): Result<Long> {
         val createBookServiceSpan =
@@ -33,7 +37,7 @@ class ServiceImpl(
                         val result =
                             bookCreatedProducer.publishCreatedBook(CreatedBook(createdBookId.toString(), title, isbn))
                         createBookServiceSpan.setAttribute("publish.result", result)
-                        println("Book created publish result $result")
+                        logger.info("Book created publish result $result")
                     }
                     createBookServiceSpan.setStatus(StatusCode.OK)
                     createBookServiceSpan.setAttribute(
