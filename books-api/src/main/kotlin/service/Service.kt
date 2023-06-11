@@ -1,5 +1,5 @@
-package repository
+package service
 
-interface Repository {
+interface Service {
     suspend fun createBook(title: String, isbn: String): Result<Long>
 }

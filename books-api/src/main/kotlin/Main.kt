@@ -1,6 +1,8 @@
 import kotlinx.coroutines.runBlocking
 import repository.Repository
 import repository.RepositoryImpl
+import service.Service
+import service.ServiceImpl
 
 fun main(): Unit = runBlocking {
     val openTelemetry = tracing.initializeOpenTelemetry(zipkinEndpoint, "books-api")
@@ -11,9 +13,10 @@ fun main(): Unit = runBlocking {
         jdbcUrl = dbUrl,
         driverClassName = driverClassName,
         username = dbUser,
-        password = dbPassword
+        password = dbPassword,
+        tracer = tracer
     )
-    val bookCreatedProducer = BookCreatedProducer(kafkaBootstrapServers, schemaRegistryUrl)
+    val bookCreatedProducer = BookCreatedProducer(kafkaBootstrapServers, schemaRegistryUrl, tracer)
     val service: Service = ServiceImpl(repository, bookCreatedProducer, tracer)
 
     val server = Server(service = service, openTelemetry = openTelemetry, tracer = tracer)

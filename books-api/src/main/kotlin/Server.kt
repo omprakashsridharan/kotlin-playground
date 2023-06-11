@@ -16,6 +16,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import request.dto.CreateBookRequest
 import response.dto.CreateBookResponse
+import service.Service
 
 class Server(private val openTelemetry: OpenTelemetry, private val service: Service, private val tracer: Tracer) {
     fun start(serverPort: Int) {
@@ -43,7 +44,9 @@ class Server(private val openTelemetry: OpenTelemetry, private val service: Serv
                             withContext(currentSpanContext) {
                                 Span.current().setAttribute("create.book.title", createBookRequest.title)
                                 Span.current().setAttribute("create.book.isbn", createBookRequest.isbn)
-                                val createdBookId = service.createBook(createBookRequest.title, createBookRequest.isbn)
+                                val createdBookResult =
+                                    service.createBook(createBookRequest.title, createBookRequest.isbn)
+                                val createdBookId = createdBookResult.getOrThrow()
                                 call.respond(
                                     CreateBookResponse(
                                         createdBookId,
