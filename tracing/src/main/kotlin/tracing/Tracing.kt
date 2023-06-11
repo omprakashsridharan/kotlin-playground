@@ -20,5 +20,6 @@ fun initializeOpenTelemetry(endpoint: String, serviceName: String): OpenTelemetr
         .setResource(Resource.getDefault().merge(serviceNameResource))
         .build()
     return OpenTelemetrySdk.builder().setTracerProvider(tracerProvider)
-        .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance())).buildAndRegisterGlobal()
+        .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
+        .buildAndRegisterGlobal()
 }

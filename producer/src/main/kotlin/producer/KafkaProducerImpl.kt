@@ -29,13 +29,7 @@ class KafkaProducerImpl<T>(bootstrapServers: String, schemaRegistryUrl: String) 
         val result = runCatching {
             producer.asyncSend(ProducerRecord(topic, null, Instant.now().toEpochMilli(), key, value))
         }
-        return if (result.isSuccess) {
-            println("Successfully produced message to topic $topic, metadata: ${result.getOrNull().toString()}")
-            true
-        } else {
-            println("Error while producing message to topic $topic, error: ${result.exceptionOrNull()}")
-            false
-        }
+        return result.isSuccess
     }
 
 }

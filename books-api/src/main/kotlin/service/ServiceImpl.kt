@@ -2,6 +2,7 @@ package service
 
 import BookCreatedProducer
 import common.messaging.dto.CreatedBook
+import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.StatusCode
 import io.opentelemetry.api.trace.Tracer
@@ -26,17 +27,17 @@ class ServiceImpl(
     override suspend fun createBook(title: String, isbn: String): Result<Long> {
         val createBookServiceSpan =
             tracer.spanBuilder("createBookService").setSpanKind(SpanKind.INTERNAL)
-                .setParent(Context.current())
+                .setParent(Context.current().with(Span.current()))
                 .startSpan()
         try {
-            return withContext(Context.current().with(createBookServiceSpan).asContextElement()) {
+            return withContext(createBookServiceSpan.asContextElement()) {
                 val createdBookResult = repository.createBook(title, isbn)
                 if (createdBookResult.isSuccess) {
                     val createdBookId = createdBookResult.getOrNull()
                     CoroutineScope(Dispatchers.IO).launch {
                         val result =
                             bookCreatedProducer.publishCreatedBook(CreatedBook(createdBookId.toString(), title, isbn))
-                        createBookServiceSpan.setAttribute("publish.result", result)
+
                         logger.info("Book created publish result $result")
                     }
                     createBookServiceSpan.setStatus(StatusCode.OK)
