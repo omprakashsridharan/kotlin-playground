@@ -2,6 +2,9 @@ package tracing
 
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.common.Attributes
+import io.opentelemetry.api.trace.Span
+import io.opentelemetry.api.trace.SpanKind
+import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.propagation.ContextPropagators
 import io.opentelemetry.exporter.zipkin.ZipkinSpanExporter
@@ -23,3 +26,14 @@ fun initializeOpenTelemetry(endpoint: String, serviceName: String): OpenTelemetr
         .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
         .buildAndRegisterGlobal()
 }
+
+suspend fun <T> Tracer.trace(spanName: String, block: suspend (Span) -> T): T {
+    val span = spanBuilder(spanName).setSpanKind(SpanKind.SERVER).startSpan()
+
+    return try {
+        span.makeCurrent().use { block(span) }
+    } finally {
+        span.end()
+    }
+}
+

@@ -10,26 +10,23 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.opentelemetry.api.OpenTelemetry
-import io.opentelemetry.api.trace.Span
-import io.opentelemetry.api.trace.SpanKind
+import io.opentelemetry.api.trace.StatusCode
 import io.opentelemetry.api.trace.Tracer
-import io.opentelemetry.context.Context
-import io.opentelemetry.extension.kotlin.asContextElement
 import io.opentelemetry.instrumentation.ktor.v2_0.server.KtorServerTracing
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import request.dto.CreateBookRequest
 import response.dto.CreateBookResponse
 import service.Service
+import tracing.trace
 
 class Server(private val openTelemetry: OpenTelemetry, private val service: Service, private val tracer: Tracer) {
+
 
     fun start(serverPort: Int) {
         embeddedServer(factory = Netty, port = serverPort, module = generateModule()).start(wait = true)
     }
 
     private fun generateModule(): Application.() -> Unit = {
-        log.info("")
         install(ContentNegotiation) {
             json(Json {
                 prettyPrint = true
@@ -52,33 +49,29 @@ class Server(private val openTelemetry: OpenTelemetry, private val service: Serv
                     post {
                         call.application.environment.log.info("create book request received")
                         val createBookRequest = call.receive<CreateBookRequest>()
-                        val createBookApiSpan = tracer.spanBuilder("createBookAPI").setSpanKind(SpanKind.INTERNAL)
-                            .setParent(Context.current().with(Span.current()))
-                            .startSpan()
 
-                        try {
-                            createBookApiSpan.setAttribute("create.book.title", createBookRequest.title)
-                            createBookApiSpan.setAttribute("create.book.isbn", createBookRequest.isbn)
-                            val createdBookId =
-                                withContext(Context.current().with(createBookApiSpan).asContextElement()) {
-                                    val createdBookResult =
-                                        service.createBook(createBookRequest.title, createBookRequest.isbn)
-                                    return@withContext createdBookResult.getOrThrow()
-
-                                }
-                            call.respond(
-                                CreateBookResponse(
-                                    createdBookId,
-                                    createBookRequest.title,
-                                    createBookRequest.isbn
+                        tracer.trace("createBookApi") {
+                            try {
+                                it.setAttribute("create.book.title", createBookRequest.title)
+                                it.setAttribute("create.book.isbn", createBookRequest.isbn)
+                                val createdBookResult =
+                                    service.createBook(createBookRequest.title, createBookRequest.isbn)
+                                val createdBookId = createdBookResult.getOrThrow()
+                                call.respond(
+                                    CreateBookResponse(
+                                        createdBookId,
+                                        createBookRequest.title,
+                                        createBookRequest.isbn
+                                    )
                                 )
-                            )
-                        } catch (e: Exception) {
-                            call.application.environment.log.error("e: ${e.message}")
-                            call.response.status(HttpStatusCode.InternalServerError)
-                        } finally {
-                            createBookApiSpan.end()
+                                it.setStatus(StatusCode.OK)
+                            } catch (e: Exception) {
+                                it.setStatus(StatusCode.ERROR)
+                                call.application.environment.log.error("e: ${e.message}")
+                                call.response.status(HttpStatusCode.InternalServerError)
+                            }
                         }
+
                     }
                 }
             }
