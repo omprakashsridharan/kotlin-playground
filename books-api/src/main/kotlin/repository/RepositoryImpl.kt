@@ -40,9 +40,9 @@ class RepositoryImpl(
         return tracer.trace("createBookRepository") {
             try {
                 val createdBookId = suspendedTransactionAsync(Dispatchers.IO, db = database) {
-                    Books.insert {
-                        it[Books.title] = title
-                        it[Books.isbn] = isbn
+                    Books.insert { book ->
+                        book[Books.title] = title
+                        book[Books.isbn] = isbn
                     } get Books.id
                 }.await()
                 it.setStatus(StatusCode.OK)
@@ -51,11 +51,8 @@ class RepositoryImpl(
                 e.message?.let { m -> it.setAttribute("repository.create.book.error", m) }
                 it.setStatus(StatusCode.ERROR)
                 return@trace Result.failure(e)
-            } finally {
-                it.end()
             }
         }
-
 
     }
 }

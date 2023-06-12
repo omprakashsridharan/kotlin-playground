@@ -6,13 +6,16 @@ import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
+import io.opentelemetry.context.Context
 import io.opentelemetry.context.propagation.ContextPropagators
 import io.opentelemetry.exporter.zipkin.ZipkinSpanExporter
+import io.opentelemetry.extension.kotlin.asContextElement
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.resources.Resource
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor
 import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
+import kotlinx.coroutines.withContext
 
 
 fun initializeOpenTelemetry(endpoint: String, serviceName: String): OpenTelemetry {
@@ -27,11 +30,17 @@ fun initializeOpenTelemetry(endpoint: String, serviceName: String): OpenTelemetr
         .buildAndRegisterGlobal()
 }
 
-suspend fun <T> Tracer.trace(spanName: String, block: suspend (Span) -> T): T {
-    val span = spanBuilder(spanName).setSpanKind(SpanKind.SERVER).startSpan()
+suspend fun <T> Tracer.trace(
+    spanName: String,
+    parentContext: Context = Context.current(),
+    block: suspend (Span) -> T
+): T {
+    val span = spanBuilder(spanName).setSpanKind(SpanKind.INTERNAL).setParent(parentContext).startSpan()
 
     return try {
-        span.makeCurrent().use { block(span) }
+        withContext(span.asContextElement()) {
+            block(span)
+        }
     } finally {
         span.end()
     }

@@ -47,10 +47,9 @@ class Server(private val openTelemetry: OpenTelemetry, private val service: Serv
             route("/api") {
                 route("/books") {
                     post {
-                        call.application.environment.log.info("create book request received")
-                        val createBookRequest = call.receive<CreateBookRequest>()
-
                         tracer.trace("createBookApi") {
+                            call.application.environment.log.info("create book request received")
+                            val createBookRequest = call.receive<CreateBookRequest>()
                             try {
                                 it.setAttribute("create.book.title", createBookRequest.title)
                                 it.setAttribute("create.book.isbn", createBookRequest.isbn)

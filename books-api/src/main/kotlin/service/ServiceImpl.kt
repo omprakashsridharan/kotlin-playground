@@ -22,32 +22,28 @@ class ServiceImpl(
 
     override suspend fun createBook(title: String, isbn: String): Result<Long> {
 
-        try {
-            return tracer.trace("createBookService") {
-                val createdBookResult = repository.createBook(title, isbn)
-                if (createdBookResult.isSuccess) {
-                    val createdBookId = createdBookResult.getOrNull()
-                    CoroutineScope(Dispatchers.IO).launch {
-                        val result =
-                            bookCreatedProducer.publishCreatedBook(CreatedBook(createdBookId.toString(), title, isbn))
-                        logger.info("Book created publish result $result")
-                    }
-                    it.setStatus(StatusCode.OK)
-                    it.setAttribute(
-                        "service.create.book.result",
-                        createdBookResult.getOrThrow().toString()
-                    )
-                } else {
-                    it.setStatus(StatusCode.ERROR)
-                    it.setAttribute(
-                        "service.create.book.error",
-                        createdBookResult.exceptionOrNull().toString()
-                    )
+        return tracer.trace("createBookService") {
+            val createdBookResult = repository.createBook(title, isbn)
+            if (createdBookResult.isSuccess) {
+                val createdBookId = createdBookResult.getOrNull()
+                CoroutineScope(Dispatchers.IO).launch {
+                    val result =
+                        bookCreatedProducer.publishCreatedBook(CreatedBook(createdBookId.toString(), title, isbn))
+                    logger.info("Book created publish result $result")
                 }
-                return@trace createdBookResult
+                it.setStatus(StatusCode.OK)
+                it.setAttribute(
+                    "service.create.book.result",
+                    createdBookResult.getOrThrow().toString()
+                )
+            } else {
+                it.setStatus(StatusCode.ERROR)
+                it.setAttribute(
+                    "service.create.book.error",
+                    createdBookResult.exceptionOrNull().toString()
+                )
             }
-        } catch (e: Exception) {
-            return Result.failure(e)
+            return@trace createdBookResult
         }
     }
 }
